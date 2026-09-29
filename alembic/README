@@ -1,1 +1,305 @@
-Generic single-database configuration.
+# URL Shortener API
+
+A backend-focused URL shortener built with FastAPI, PostgreSQL, SQLAlchemy, JWT authentication, Argon2 password hashing, Alembic, and automated tests.
+
+The project started as a URL-shortening API and was extended into a multi-user backend with authentication, authorization, per-user resources, pagination, migrations, error handling, and a dedicated test database.
+
+## Features
+
+* Create 7-character short URLs
+* Redirect short URLs with HTTP 307
+* User registration
+* Argon2 password hashing
+* JWT access-token authentication
+* Authenticated user profile endpoint
+* User-specific URL listing
+* Pagination for URL listings
+* Update a user's own URL
+* Delete a user's own URL
+* Ownership checks so users cannot modify other users' URLs
+* Duplicate URL handling with `409 Conflict`
+* Pydantic request/response validation
+* PostgreSQL persistence with SQLAlchemy ORM
+* Alembic database migration support
+* Separate test database
+* Automated API tests with pytest
+* Interactive API documentation through Swagger UI
+
+## Tech Stack
+
+* Python
+* FastAPI
+* PostgreSQL
+* SQLAlchemy
+* Pydantic / Pydantic Settings
+* PyJWT
+* pwdlib + Argon2
+* Alembic
+* pytest
+* HTTPX / FastAPI TestClient
+
+## API Endpoints
+
+### Authentication and users
+
+| Method   | Endpoint                      | Auth | Description                           |
+| -------- | ----------------------------- | ---: | ------------------------------------- |
+| `POST`   | `/users`                      |   No | Register a new user                   |
+| `POST`   | `/token`                      |   No | Log in and receive a JWT access token |
+| `GET`    | `/users/me`                   |  Yes | Return the authenticated user         |
+| `GET`    | `/users/me/urls`              |  Yes | List the authenticated user's URLs    |
+| `PATCH`  | `/users/me/urls/{short_code}` |  Yes | Update a user's own URL               |
+| `DELETE` | `/users/me/urls/{short_code}` |  Yes | Delete a user's own URL               |
+
+### URL operations
+
+| Method | Endpoint        | Auth | Description                  |
+| ------ | --------------- | ---: | ---------------------------- |
+| `POST` | `/urls`         |  Yes | Create a short URL           |
+| `GET`  | `/{short_code}` |   No | Redirect to the original URL |
+
+`GET /{short_code}` is intentionally public because a short URL must be usable without authentication.
+
+## Authentication Flow
+
+1. Register a user with `POST /users`.
+2. Log in through `POST /token`.
+3. The API verifies the password against the stored Argon2 hash.
+4. A JWT access token is returned.
+5. Protected endpoints receive the token through:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+6. The JWT `sub` claim identifies the user.
+7. Protected URL operations use the authenticated user's ID to enforce ownership.
+
+Passwords are never stored as plaintext.
+
+## Pagination
+
+`GET /users/me/urls` supports:
+
+```text
+GET /users/me/urls?skip=0&limit=20
+```
+
+* `skip` must be `>= 0`
+* `limit` must be between `1` and `100`
+* Results are ordered by URL ID
+
+Example:
+
+```text
+GET /users/me/urls?skip=0&limit=10
+GET /users/me/urls?skip=10&limit=10
+```
+
+## Error Handling
+
+The API uses meaningful HTTP status codes for common failure cases:
+
+* `401 Unauthorized` — missing or invalid authentication
+* `404 Not Found` — resource does not exist or is not owned by the authenticated user
+* `409 Conflict` — duplicate username or original URL
+* `422 Unprocessable Entity` — invalid request data
+
+Example duplicate URL response:
+
+```json
+{
+  "detail": "URL already exists"
+}
+```
+
+## Project Structure
+
+```text
+url-shortner/
+├── alembic/
+│   ├── versions/
+│   ├── env.py
+│   ├── README
+│   └── script.py.mako
+├── app/
+│   ├── api/
+│   │   ├── routes/
+│   │   │   ├── auth.py
+│   │   │   ├── urls.py
+│   │   │   └── users.py
+│   │   └── dependencies.py
+│   ├── services/
+│   │   ├── url_service.py
+│   │   └── user_service.py
+│   ├── config.py
+│   ├── database.py
+│   ├── main.py
+│   ├── models.py
+│   └── security.py
+├── tests/
+│   ├── conftest.py
+│   ├── test_auth.py
+│   └── test_urls.py
+├── alembic.ini
+├── pytest.ini
+├── .gitignore
+└── README.md
+```
+
+## Local Setup
+
+### 1. Clone the repository
+
+```bash
+git clone git@github.com:Mehrshad-77/url-shortner.git
+cd url-shortner
+```
+
+### 2. Create and activate a virtual environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+pip install fastapi uvicorn sqlalchemy "psycopg[binary]" \
+    "pwdlib[argon2]" pyjwt python-multipart \
+    alembic pydantic-settings pytest httpx2
+```
+
+### 4. Create PostgreSQL databases
+
+Create:
+
+```text
+url_shortener
+url_shortener_test
+```
+
+The application database is used for development. The test database is used by pytest.
+
+### 5. Configure environment variables
+
+Create a `.env` file in the project root:
+
+```env
+DATABASE_URL=postgresql+psycopg://postgres:<password>@localhost/url_shortener
+TEST_DATABASE_URL=postgresql+psycopg://postgres:<password>@localhost/url_shortener_test
+
+JWT_SECRET_KEY=<long-random-secret>
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+Do not commit `.env` to Git.
+
+### 6. Initialize a fresh development schema
+
+The current Alembic baseline represents the existing development schema. For a fresh local database, create the tables from the SQLAlchemy metadata first:
+
+```bash
+python3 -c "from app.database import engine; from app.models import Base; Base.metadata.create_all(bind=engine)"
+```
+
+Then mark the database at the current Alembic baseline:
+
+```bash
+alembic stamp head
+```
+
+### 7. Start the API
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Swagger UI:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+OpenAPI schema:
+
+```text
+http://127.0.0.1:8000/openapi.json
+```
+
+## Running Tests
+
+The test suite uses the separate `url_shortener_test` database.
+
+Run:
+
+```bash
+pytest -q
+```
+
+Current test suite:
+
+```text
+26 passed
+```
+
+The tests cover authentication, user registration, JWT handling, URL creation, redirects, pagination, updates, deletion, duplicate handling, and cross-user ownership protection.
+
+## Database Migrations
+
+Check migration state:
+
+```bash
+alembic current
+```
+
+Check whether model/database differences exist:
+
+```bash
+alembic check
+```
+
+Create a migration after changing the SQLAlchemy models:
+
+```bash
+alembic revision --autogenerate -m "describe change"
+```
+
+Review the generated migration before applying it.
+
+Apply migrations:
+
+```bash
+alembic upgrade head
+```
+
+## Security Notes
+
+* Passwords are hashed with Argon2 before storage.
+* JWT signing uses a secret loaded from environment configuration.
+* JWT access tokens have a configurable expiration time.
+* Protected endpoints derive user identity from the JWT rather than trusting a client-supplied `user_id`.
+* URL update/delete operations require ownership of the resource.
+* Secrets and database credentials are stored outside the repository in `.env`.
+
+## Current Status
+
+This repository represents the first complete version of the project, including:
+
+* authenticated multi-user API
+* PostgreSQL persistence
+* ownership-based authorization
+* pagination
+* duplicate handling
+* Alembic baseline
+* centralized configuration
+* dedicated test database
+* automated test coverage
+
+The next production-oriented steps are containerization, deployment, and further operational hardening.
+
+## Repository
+
+GitHub: https://github.com/Mehrshad-77/url-shortner
