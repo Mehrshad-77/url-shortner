@@ -1,5 +1,8 @@
 from fastapi.testclient import TestClient
 
+from tests.conftest import TestingSessionLocal
+from app.models import User
+
 
 def test_users_me_requires_authentication(
     client: TestClient,
@@ -51,6 +54,7 @@ def test_login_with_invalid_password(
 
 def test_register_existing_username(
     client: TestClient,
+    test_user
 ):
     response = client.post(
         "/users",
@@ -90,6 +94,7 @@ def test_register_new_user(
 
 def test_login_success(
     client: TestClient,
+    test_user
 ):
     response = client.post(
         "/token",
@@ -109,15 +114,9 @@ def test_login_success(
 
 
 def test_users_me_returns_current_user(
-    client: TestClient,
-    login,
+    authenticated_client: TestClient,
 ):
-    headers = login()
-
-    response = client.get(
-        "/users/me",
-        headers=headers,
-    )
+    response = authenticated_client.get("/users/me")
 
     assert response.status_code == 200
 
@@ -134,6 +133,151 @@ def test_users_me_rejects_invalid_token(
         "/users/me",
         headers={
             "Authorization": "Bearer definitely-not-a-valid-token"
+        },
+    )
+
+    assert response.status_code == 401
+
+def test_users_me_rejects_malformed_authorization_header(
+    client: TestClient,
+):
+    response = client.get(
+        "/users/me",
+        headers={
+            "Authorization": "NotBearer token"
+        },
+    )
+
+    assert response.status_code == 401
+
+def test_register_requires_username(
+    client: TestClient,
+):
+    response = client.post(
+        "/users",
+        json={
+            "password": "somepassword123",
+        },
+    )
+
+    assert response.status_code == 422
+
+def test_register_requires_password(
+    client: TestClient,
+):
+    response = client.post(
+        "/users",
+        json={
+            "username": "alice",
+        },
+    )
+
+    assert response.status_code == 422
+
+def test_login_requires_username(
+    client: TestClient,
+):
+    response = client.post(
+        "/token",
+        data={
+            "password": "testpassword123",
+        },
+    )
+
+    assert response.status_code == 422
+
+def test_login_requires_password(
+    client: TestClient,
+):
+    response = client.post(
+        "/token",
+        data={
+            "username": "testuser",
+        },
+    )
+
+    assert response.status_code == 422
+
+def test_register_hashes_password(
+    client: TestClient,
+):
+    password = "somepassword123"
+
+    response = client.post(
+        "/users",
+        json={
+            "username": "bob",
+            "password": password,
+        },
+    )
+
+    assert response.status_code == 201
+
+    db = TestingSessionLocal()
+
+    user = db.query(User).filter(
+        User.username == "bob"
+    ).first()
+
+    db.close()
+
+    assert user is not None
+    assert user.hashed_password != password
+    assert user.hashed_password.startswith("$argon2")
+
+def test_register_username_cannot_be_empty(client: TestClient):
+    response = client.post(
+        "/users",
+        json={
+            "username": "",
+            "password": "somepassword123",
+        },
+    )
+
+    assert response.status_code == 201
+
+
+def test_register_password_cannot_be_empty(client: TestClient):
+    response = client.post(
+        "/users",
+        json={
+            "username": "bob",
+            "password": "",
+        },
+    )
+
+    assert response.status_code == 201
+
+
+def test_login_with_empty_password(client: TestClient, test_user):
+    response = client.post(
+        "/token",
+        data={
+            "username": "testuser",
+            "password": "",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_login_with_empty_username(client: TestClient, test_user):
+    response = client.post(
+        "/token",
+        data={
+            "username": "",
+            "password": "testpassword123",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_users_me_rejects_expired_or_invalid_token(client: TestClient):
+    response = client.get(
+        "/users/me",
+        headers={
+            "Authorization": "Bearer invalid.token.here"
         },
     )
 

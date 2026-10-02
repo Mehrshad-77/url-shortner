@@ -116,6 +116,18 @@ def update_url(
             detail= "URL not found"
         )
 
+    if url.original_url == original_url:
+        raise HTTPException(
+            status_code=400,
+            detail="The new URL is the same as the current one"
+        )
+
+    if db.query(URL).filter(URL.original_url == original_url).first():
+        raise HTTPException(
+            status_code=409,
+            detail="URL already exists"
+        )
+
     url.original_url = original_url
 
     db.commit()

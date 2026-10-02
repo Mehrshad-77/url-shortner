@@ -34,16 +34,10 @@ def reset_database():
     Base.metadata.drop_all(bind=test_engine)
     Base.metadata.create_all(bind=test_engine)
 
-    db = TestingSessionLocal()
-
-    test_user = User(
-        username="testuser",
-        hashed_password=hash_password("testpassword123"),
-    )
-
-    db.add(test_user)
-    db.commit()
-    db.close()
+    with test_engine.begin() as connection:
+        connection.exec_driver_sql(
+            "ALTER SEQUENCE users_id_seq RESTART WITH 1"
+        )
 
     def override_get_db():
         db = TestingSessionLocal()
@@ -59,6 +53,61 @@ def reset_database():
 
     app.dependency_overrides.clear()
 
+@pytest.fixture
+def test_password():
+    return "testpassword123"
+
+@pytest.fixture
+def test_user(test_password):
+    db = TestingSessionLocal()
+
+    user = User(
+        username="testuser",
+        hashed_password=hash_password(test_password),
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    db.close()
+
+    return user
+
+@pytest.fixture
+def test_user(test_password):
+    db = TestingSessionLocal()
+
+    user = User(
+        username="testuser",
+        hashed_password=hash_password(test_password),
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    db.close()
+
+    return user
+
+@pytest.fixture
+def alice_password():
+    return "alicepassword123"
+
+@pytest.fixture
+def alice_user(alice_password):
+    db = TestingSessionLocal()
+
+    user = User(
+        username="alice",
+        hashed_password=hash_password(alice_password),
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    db.close()
+
+    return user
 
 @pytest.fixture
 def client():
@@ -67,11 +116,17 @@ def client():
 
 
 @pytest.fixture
-def login(client):
+def login(client, test_user, test_password):
     def _login(
-        username="testuser",
-        password="testpassword123",
+        username=None,
+        password=None,
     ):
+        if username is None:
+            username = test_user.username
+
+        if password is None:
+            password = test_password
+
         response = client.post(
             "/token",
             data={
@@ -89,3 +144,12 @@ def login(client):
         }
 
     return _login
+
+
+@pytest.fixture
+def authenticated_client(client, login):
+    headers = login()
+
+    client.headers.update(headers)
+
+    return client
