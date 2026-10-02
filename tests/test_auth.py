@@ -230,23 +230,23 @@ def test_register_username_cannot_be_empty(client: TestClient):
         "/users",
         json={
             "username": "",
-            "password": "somepassword123",
+            "password": "testpassword123",
         },
     )
 
-    assert response.status_code == 201
+    assert response.status_code == 422
 
 
 def test_register_password_cannot_be_empty(client: TestClient):
     response = client.post(
         "/users",
         json={
-            "username": "bob",
+            "username": "newuser",
             "password": "",
         },
     )
 
-    assert response.status_code == 201
+    assert response.status_code == 422
 
 
 def test_login_with_empty_password(client: TestClient, test_user):
@@ -282,3 +282,97 @@ def test_users_me_rejects_expired_or_invalid_token(client: TestClient):
     )
 
     assert response.status_code == 401
+
+def test_register_username_too_short(client: TestClient):
+    response = client.post(
+        "/users",
+        json={
+            "username": "ab",
+            "password": "testpassword123",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_register_password_too_short(client: TestClient):
+    response = client.post(
+        "/users",
+        json={
+            "username": "newuser",
+            "password": "1234567",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_register_username_too_long(client: TestClient):
+    response = client.post(
+        "/users",
+        json={
+            "username": "a" * 51,
+            "password": "testpassword123",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_register_password_too_long(client: TestClient):
+    response = client.post(
+        "/users",
+        json={
+            "username": "newuser",
+            "password": "a" * 129,
+        },
+    )
+
+    assert response.status_code == 422
+
+def test_register_username_min_length_allowed(client: TestClient):
+    response = client.post(
+        "/users",
+        json={
+            "username": "abc",
+            "password": "testpassword123",
+        },
+    )
+
+    assert response.status_code == 201
+
+
+def test_register_password_min_length_allowed(client: TestClient):
+    response = client.post(
+        "/users",
+        json={
+            "username": "newuser",
+            "password": "12345678",
+        },
+    )
+
+    assert response.status_code == 201
+
+
+def test_register_username_max_length_allowed(client: TestClient):
+    response = client.post(
+        "/users",
+        json={
+            "username": "a" * 50,
+            "password": "testpassword123",
+        },
+    )
+
+    assert response.status_code == 201
+
+
+def test_register_password_max_length_allowed(client: TestClient):
+    response = client.post(
+        "/users",
+        json={
+            "username": "newuser",
+            "password": "a" * 128,
+        },
+    )
+
+    assert response.status_code == 201

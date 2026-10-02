@@ -41,7 +41,7 @@ def create_url(
         db.add(new_url)
         db.commit()
         db.refresh(new_url)
-    except:
+    except IntegrityError:
         db.rollback()
         raise HTTPException(
             status_code=409,
@@ -130,7 +130,28 @@ def update_url(
 
     url.original_url = original_url
 
-    db.commit()
-    db.refresh(url)
-    
+    try:
+        db.commit()
+        db.refresh(url)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="URL already exists"
+        )
     return url
+
+def get_user_urls(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 20
+):
+    return (
+        db.query(URL)
+        .filter(URL.user_id == user_id)
+        .order_by(URL.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )

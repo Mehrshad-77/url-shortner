@@ -6,10 +6,19 @@ from app.database import get_db
 from app.security import create_access_token
 from app.services.user_service import authenticate_user
 from app.config import settings
+from app.schemas import ErrorResponse
 
 router = APIRouter()
 
-@router.post("/token")
+@router.post(
+    "/token",
+    responses={
+        401: {
+            "model": ErrorResponse,
+            "description": "Incorrect username or password",
+        },
+    },
+)
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
