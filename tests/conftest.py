@@ -49,29 +49,14 @@ def reset_database():
 
     app.dependency_overrides[get_db] = override_get_db
 
-    yield
-
-    app.dependency_overrides.clear()
+    try:
+        yield
+    finally:
+        app.dependency_overrides.clear()
 
 @pytest.fixture
 def test_password():
     return "testpassword123"
-
-@pytest.fixture
-def test_user(test_password):
-    db = TestingSessionLocal()
-
-    user = User(
-        username="testuser",
-        hashed_password=hash_password(test_password),
-    )
-
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    db.close()
-
-    return user
 
 @pytest.fixture
 def test_user(test_password):
