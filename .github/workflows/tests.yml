@@ -1,0 +1,48 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: url_shortener
+          POSTGRES_PASSWORD: url_shortener_password
+          POSTGRES_DB: url_shortener_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U url_shortener -d url_shortener_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+psycopg://url_shortener:url_shortener_password@localhost:5432/url_shortener_test
+      TEST_DATABASE_URL: postgresql+psycopg://url_shortener:url_shortener_password@localhost:5432/url_shortener_test
+      JWT_SECRET_KEY: ci-only-secret-key-not-for-production
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements-lock.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements-lock.txt
+
+      - name: Run tests
+        run: python -m pytest -q
