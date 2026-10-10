@@ -15,6 +15,11 @@ def root():
     return {"message": "URL Shortener API"}
 
 
+@app.get("/health", tags=["health"])
+def health_check():
+    return {"status": "ok"}
+
+
 app.include_router(url_router)
 app.include_router(user_router)
 app.include_router(auth_router)
