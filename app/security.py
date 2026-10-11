@@ -5,8 +5,11 @@ from pwdlib import PasswordHash
 
 from app.config import settings
 
-
 password_hash = PasswordHash.recommended()
+
+# Verified against when a username does not exist, so login takes about the
+# same time whether or not the user is real.
+DUMMY_HASH = password_hash.hash("dummy-password")
 
 
 def hash_password(password: str) -> str:

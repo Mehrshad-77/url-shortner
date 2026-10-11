@@ -1,25 +1,23 @@
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from app.models import User
-from app.security import hash_password, verify_password
+from app.security import DUMMY_HASH, hash_password, verify_password
 
 
-def create_user(db: Session, username: str, password: str):
-    existing_user = db.query(User).filter(User.username == username).first()
+def get_user_by_username(db: Session, username: str) -> User | None:
+    return db.scalar(select(User).where(User.username == username.lower()))
 
-    if existing_user is not None:
-        raise HTTPException(
-            status_code=409,
-            detail="Username already exists"
-        )
 
-    hashed_password = hash_password(password)
+def create_user(db: Session, username: str, password: str) -> User:
+    if get_user_by_username(db, username) is not None:
+        raise HTTPException(status_code=409, detail="Username already exists")
 
     new_user = User(
-        username=username,
-        hashed_password=hashed_password
+        username=username.lower(),
+        hashed_password=hash_password(password),
     )
 
     try:
@@ -28,31 +26,17 @@ def create_user(db: Session, username: str, password: str):
         db.refresh(new_user)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=409,
-            detail="Username already exists"
-        )
+        raise HTTPException(status_code=409, detail="Username already exists")
 
     return new_user
 
-def authenticate_user(
-        db: Session,
-        username: str,
-        password: str,
-):
-    user = (
-        db.query(User)
-        .filter(User.username == username)
-        .first()
-    )
 
-    if user is None:
-        return None
+def authenticate_user(db: Session, username: str, password: str) -> User | None:
+    user = get_user_by_username(db, username)
 
-    if user.hashed_password is None:
-        return None
+    # Always run a password check, even for unknown users, so response time
+    # doesn't reveal which usernames exist.
+    hashed = user.hashed_password if user else DUMMY_HASH
+    password_ok = verify_password(password, hashed)
 
-    if not verify_password(password, user.hashed_password):
-        return None
-
-    return user
+    return user if user and password_ok else None

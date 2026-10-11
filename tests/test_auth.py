@@ -1,7 +1,8 @@
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
-from tests.conftest import TestingSessionLocal
 from app.models import User
+from tests.conftest import TestingSessionLocal
 
 
 def test_users_me_requires_authentication(
@@ -11,9 +12,7 @@ def test_users_me_requires_authentication(
 
     assert response.status_code == 401
 
-    assert response.json() == {
-        "detail": "Not authenticated"
-    }
+    assert response.json() == {"detail": "Not authenticated"}
 
 
 def test_login_with_invalid_username(
@@ -29,9 +28,7 @@ def test_login_with_invalid_username(
 
     assert response.status_code == 401
 
-    assert response.json() == {
-        "detail": "Incorrect username or password"
-    }
+    assert response.json() == {"detail": "Incorrect username or password"}
 
 
 def test_login_with_invalid_password(
@@ -47,15 +44,10 @@ def test_login_with_invalid_password(
 
     assert response.status_code == 401
 
-    assert response.json() == {
-        "detail": "Incorrect username or password"
-    }
+    assert response.json() == {"detail": "Incorrect username or password"}
 
 
-def test_register_existing_username(
-    client: TestClient,
-    test_user
-):
+def test_register_existing_username(client: TestClient, test_user):
     response = client.post(
         "/users",
         json={
@@ -66,9 +58,7 @@ def test_register_existing_username(
 
     assert response.status_code == 409
 
-    assert response.json() == {
-        "detail": "Username already exists"
-    }
+    assert response.json() == {"detail": "Username already exists"}
 
 
 def test_register_new_user(
@@ -92,10 +82,7 @@ def test_register_new_user(
     assert "password" not in body
 
 
-def test_login_success(
-    client: TestClient,
-    test_user
-):
+def test_login_success(client: TestClient, test_user):
     response = client.post(
         "/token",
         data={
@@ -131,24 +118,22 @@ def test_users_me_rejects_invalid_token(
 ):
     response = client.get(
         "/users/me",
-        headers={
-            "Authorization": "Bearer definitely-not-a-valid-token"
-        },
+        headers={"Authorization": "Bearer definitely-not-a-valid-token"},
     )
 
     assert response.status_code == 401
+
 
 def test_users_me_rejects_malformed_authorization_header(
     client: TestClient,
 ):
     response = client.get(
         "/users/me",
-        headers={
-            "Authorization": "NotBearer token"
-        },
+        headers={"Authorization": "NotBearer token"},
     )
 
     assert response.status_code == 401
+
 
 def test_register_requires_username(
     client: TestClient,
@@ -162,6 +147,7 @@ def test_register_requires_username(
 
     assert response.status_code == 422
 
+
 def test_register_requires_password(
     client: TestClient,
 ):
@@ -173,6 +159,7 @@ def test_register_requires_password(
     )
 
     assert response.status_code == 422
+
 
 def test_login_requires_username(
     client: TestClient,
@@ -186,6 +173,7 @@ def test_login_requires_username(
 
     assert response.status_code == 422
 
+
 def test_login_requires_password(
     client: TestClient,
 ):
@@ -197,6 +185,7 @@ def test_login_requires_password(
     )
 
     assert response.status_code == 422
+
 
 def test_register_hashes_password(
     client: TestClient,
@@ -215,15 +204,14 @@ def test_register_hashes_password(
 
     db = TestingSessionLocal()
 
-    user = db.query(User).filter(
-        User.username == "bob"
-    ).first()
+    user = db.scalar(select(User).where(User.username == "bob"))
 
     db.close()
 
     assert user is not None
     assert user.hashed_password != password
     assert user.hashed_password.startswith("$argon2")
+
 
 def test_register_username_cannot_be_empty(client: TestClient):
     response = client.post(
@@ -276,12 +264,11 @@ def test_login_with_empty_username(client: TestClient, test_user):
 def test_users_me_rejects_expired_or_invalid_token(client: TestClient):
     response = client.get(
         "/users/me",
-        headers={
-            "Authorization": "Bearer invalid.token.here"
-        },
+        headers={"Authorization": "Bearer invalid.token.here"},
     )
 
     assert response.status_code == 401
+
 
 def test_register_username_too_short(client: TestClient):
     response = client.post(
@@ -330,6 +317,7 @@ def test_register_password_too_long(client: TestClient):
 
     assert response.status_code == 422
 
+
 def test_register_username_min_length_allowed(client: TestClient):
     response = client.post(
         "/users",
@@ -376,3 +364,42 @@ def test_register_password_max_length_allowed(client: TestClient):
     )
 
     assert response.status_code == 201
+
+
+def test_register_existing_username_ignores_case(client: TestClient, test_user):
+    response = client.post(
+        "/users",
+        json={
+            "username": "TestUser",
+            "password": "anotherpassword123",
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Username already exists"}
+
+
+def test_register_stores_username_in_lowercase(client: TestClient):
+    response = client.post(
+        "/users",
+        json={
+            "username": "NewUser",
+            "password": "newpassword123",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["username"] == "newuser"
+
+
+def test_login_ignores_username_case(client: TestClient, test_user, test_password):
+    response = client.post(
+        "/token",
+        data={
+            "username": "TESTUSER",
+            "password": test_password,
+        },
+    )
+
+    assert response.status_code == 200
+    assert "access_token" in response.json()
