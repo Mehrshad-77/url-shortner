@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from app.models import URL
 
 BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+MAX_SHORT_CODE_ATTEMPTS = 5
+SHORT_CODE_CONSTRAINT = "urls_short_code_key"
 
 
 def generate_short_code(length: int = 7) -> str:
@@ -30,27 +32,31 @@ def get_owned_url(db: Session, short_code: str, user_id: int) -> URL:
 
 
 def create_url(db: Session, original_url: str, user_id: int | None = None) -> URL:
-    while True:
-        short_code = generate_short_code()
-
-        if get_url_by_short_code(db, short_code) is None:
-            break
-
-    new_url = URL(
-        original_url=original_url,
-        short_code=short_code,
-        user_id=user_id,
-    )
-
-    try:
+    # No "does this code exist?" pre-check: another request could take the code
+    # between the check and the insert. The unique constraint is the real guard,
+    # so insert and retry with a new code if it reports a short-code collision.
+    for _ in range(MAX_SHORT_CODE_ATTEMPTS):
+        new_url = URL(
+            original_url=original_url,
+            short_code=generate_short_code(),
+            user_id=user_id,
+        )
         db.add(new_url)
-        db.commit()
-        db.refresh(new_url)
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="URL already exists")
 
-    return new_url
+        try:
+            db.commit()
+        except IntegrityError as e:
+            db.rollback()
+
+            if e.orig.diag.constraint_name == SHORT_CODE_CONSTRAINT:
+                continue
+
+            raise HTTPException(status_code=409, detail="URL already exists")
+
+        db.refresh(new_url)
+        return new_url
+
+    raise HTTPException(status_code=500, detail="Could not generate a short code")
 
 
 def redirect(db: Session, short_code: str) -> RedirectResponse:
