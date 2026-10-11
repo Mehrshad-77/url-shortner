@@ -85,7 +85,7 @@ def update_url(
             status_code=400,
             detail="The new URL is the same as the current one",
         )
-    
+
     url.original_url = original_url
 
     try:

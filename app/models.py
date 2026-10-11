@@ -33,4 +33,5 @@ class URL(Base):
 
     user: Mapped[User | None] = relationship(back_populates="urls")
 
+
 Index("uq_urls_user_id_original_url", URL.user_id, URL.original_url, unique=True)
