@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, ForeignKey, Text
+from sqlalchemy import BigInteger, ForeignKey, Index, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -23,7 +23,7 @@ class URL(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
-    original_url: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    original_url: Mapped[str] = mapped_column(Text, nullable=False)
 
     user_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("users.id"), nullable=True
@@ -32,3 +32,5 @@ class URL(Base):
     short_code: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
 
     user: Mapped[User | None] = relationship(back_populates="urls")
+
+Index("uq_urls_user_id_original_url", URL.user_id, URL.original_url, unique=True)

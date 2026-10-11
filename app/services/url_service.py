@@ -32,9 +32,6 @@ def get_owned_url(db: Session, short_code: str, user_id: int) -> URL:
 
 
 def create_url(db: Session, original_url: str, user_id: int | None = None) -> URL:
-    # No "does this code exist?" pre-check: another request could take the code
-    # between the check and the insert. The unique constraint is the real guard,
-    # so insert and retry with a new code if it reports a short-code collision.
     for _ in range(MAX_SHORT_CODE_ATTEMPTS):
         new_url = URL(
             original_url=original_url,
@@ -88,10 +85,7 @@ def update_url(
             status_code=400,
             detail="The new URL is the same as the current one",
         )
-
-    if db.scalar(select(URL.id).where(URL.original_url == original_url)):
-        raise HTTPException(status_code=409, detail="URL already exists")
-
+    
     url.original_url = original_url
 
     try:

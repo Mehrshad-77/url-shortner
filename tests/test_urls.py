@@ -426,7 +426,7 @@ def test_users_only_see_their_own_urls(
     assert alice_urls_body[0]["original_url"] == "https://github.com/"
 
 
-def test_duplicate_url_across_users_returns_409(
+def test_duplicate_url_across_users_returns_201(
     client: TestClient,
     login,
     alice_user,
@@ -457,9 +457,7 @@ def test_duplicate_url_across_users_returns_409(
         headers=alice_headers,
     )
 
-    assert second_response.status_code == 409
-
-    assert second_response.json() == {"detail": "URL already exists"}
+    assert second_response.status_code == 201
 
 
 def test_update_url_to_existing_url_returns_409(
@@ -495,6 +493,52 @@ def test_update_url_to_existing_url_returns_409(
     assert update_response.status_code == 409
 
     assert update_response.json() == {"detail": "URL already exists"}
+
+
+def test_update_url_to_url_owned_by_another_user(
+    client: TestClient,
+    login,
+    alice_user,
+    alice_password,
+):
+    testuser_headers = login()
+    alice_headers = login(
+        username=alice_user.username,
+        password=alice_password,
+    )
+
+    alice_response = client.post(
+        "/urls",
+        json={
+            "url": "https://example.com/",
+        },
+        headers=alice_headers,
+    )
+
+    assert alice_response.status_code == 201
+
+    testuser_response = client.post(
+        "/urls",
+        json={
+            "url": "https://github.com/",
+        },
+        headers=testuser_headers,
+    )
+
+    assert testuser_response.status_code == 201
+
+    short_code = testuser_response.json()["short_code"]
+
+    update_response = client.patch(
+        f"/users/me/urls/{short_code}",
+        json={
+            "url": "https://example.com/",
+        },
+        headers=testuser_headers,
+    )
+
+    assert update_response.status_code == 200
+    assert update_response.json()["original_url"] == "https://example.com/"
 
 
 def test_get_my_urls_skip_beyond_results(
