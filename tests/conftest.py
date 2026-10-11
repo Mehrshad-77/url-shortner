@@ -11,7 +11,6 @@ from app.main import app
 from app.models import Base, User
 from app.security import hash_password
 
-
 load_dotenv()
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
@@ -35,9 +34,7 @@ def reset_database():
     Base.metadata.create_all(bind=test_engine)
 
     with test_engine.begin() as connection:
-        connection.exec_driver_sql(
-            "ALTER SEQUENCE users_id_seq RESTART WITH 1"
-        )
+        connection.exec_driver_sql("ALTER SEQUENCE users_id_seq RESTART WITH 1")
 
     def override_get_db():
         db = TestingSessionLocal()
@@ -54,9 +51,11 @@ def reset_database():
     finally:
         app.dependency_overrides.clear()
 
+
 @pytest.fixture
 def test_password():
     return "testpassword123"
+
 
 @pytest.fixture
 def test_user(test_password):
@@ -74,9 +73,11 @@ def test_user(test_password):
 
     return user
 
+
 @pytest.fixture
 def alice_password():
     return "alicepassword123"
+
 
 @pytest.fixture
 def alice_user(alice_password):
@@ -93,6 +94,7 @@ def alice_user(alice_password):
     db.close()
 
     return user
+
 
 @pytest.fixture
 def client():
@@ -124,9 +126,7 @@ def login(client, test_user, test_password):
 
         token = response.json()["access_token"]
 
-        return {
-            "Authorization": f"Bearer {token}"
-        }
+        return {"Authorization": f"Bearer {token}"}
 
     return _login
 

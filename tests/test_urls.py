@@ -24,7 +24,7 @@ def test_create_url(
         },
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     body = response.json()
 
@@ -58,7 +58,7 @@ def test_duplicate_url_returns_409(
         },
     )
 
-    assert first_response.status_code == 200
+    assert first_response.status_code == 201
 
     second_response = authenticated_client.post(
         "/urls",
@@ -69,9 +69,7 @@ def test_duplicate_url_returns_409(
 
     assert second_response.status_code == 409
 
-    assert second_response.json() == {
-        "detail": "URL already exists"
-    }
+    assert second_response.json() == {"detail": "URL already exists"}
 
 
 def test_redirect_url(
@@ -84,7 +82,7 @@ def test_redirect_url(
         },
     )
 
-    assert create_response.status_code == 200
+    assert create_response.status_code == 201
 
     short_code = create_response.json()["short_code"]
 
@@ -107,9 +105,7 @@ def test_redirect_invalid_short_code(
 
     assert response.status_code == 404
 
-    assert response.json() == {
-        "detail": "URL not found"
-    }
+    assert response.json() == {"detail": "URL not found"}
 
 
 def test_get_my_urls_requires_authentication(
@@ -167,7 +163,7 @@ def test_get_my_urls_pagination(
             json={"url": url},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 201
 
     first_page = authenticated_client.get(
         "/users/me/urls?skip=0&limit=2",
@@ -265,9 +261,7 @@ def test_update_missing_url_returns_404(
 
     assert response.status_code == 404
 
-    assert response.json() == {
-        "detail": "URL not found"
-    }
+    assert response.json() == {"detail": "URL not found"}
 
 
 def test_delete_own_url(
@@ -305,16 +299,11 @@ def test_delete_missing_url_returns_404(
 
     assert response.status_code == 404
 
-    assert response.json() == {
-        "detail": "URL not found"
-    }
+    assert response.json() == {"detail": "URL not found"}
 
 
 def test_user_cannot_update_another_users_url(
-    client: TestClient,
-    login,
-    alice_user,
-    alice_password
+    client: TestClient, login, alice_user, alice_password
 ):
     owner_headers = login()
 
@@ -353,10 +342,7 @@ def test_user_cannot_update_another_users_url(
 
 
 def test_user_cannot_delete_another_users_url(
-    client: TestClient,
-    login,
-    alice_user,
-    alice_password
+    client: TestClient, login, alice_user, alice_password
 ):
     owner_headers = login()
 
@@ -392,10 +378,7 @@ def test_user_cannot_delete_another_users_url(
 
 
 def test_users_only_see_their_own_urls(
-    client: TestClient,
-    login,
-    alice_user,
-    alice_password
+    client: TestClient, login, alice_user, alice_password
 ):
     testuser_headers = login()
 
@@ -442,6 +425,7 @@ def test_users_only_see_their_own_urls(
     assert testuser_urls_body[0]["original_url"] == "https://example.com/"
     assert alice_urls_body[0]["original_url"] == "https://github.com/"
 
+
 def test_duplicate_url_across_users_returns_409(
     client: TestClient,
     login,
@@ -458,7 +442,7 @@ def test_duplicate_url_across_users_returns_409(
         headers=testuser_headers,
     )
 
-    assert first_response.status_code == 200
+    assert first_response.status_code == 201
 
     alice_headers = login(
         username=alice_user.username,
@@ -475,9 +459,8 @@ def test_duplicate_url_across_users_returns_409(
 
     assert second_response.status_code == 409
 
-    assert second_response.json() == {
-        "detail": "URL already exists"
-    }
+    assert second_response.json() == {"detail": "URL already exists"}
+
 
 def test_update_url_to_existing_url_returns_409(
     authenticated_client: TestClient,
@@ -489,7 +472,7 @@ def test_update_url_to_existing_url_returns_409(
         },
     )
 
-    assert first_response.status_code == 200
+    assert first_response.status_code == 201
 
     second_response = authenticated_client.post(
         "/urls",
@@ -498,7 +481,7 @@ def test_update_url_to_existing_url_returns_409(
         },
     )
 
-    assert second_response.status_code == 200
+    assert second_response.status_code == 201
 
     first_short_code = first_response.json()["short_code"]
 
@@ -511,9 +494,8 @@ def test_update_url_to_existing_url_returns_409(
 
     assert update_response.status_code == 409
 
-    assert update_response.json() == {
-        "detail": "URL already exists"
-    }
+    assert update_response.json() == {"detail": "URL already exists"}
+
 
 def test_get_my_urls_skip_beyond_results(
     authenticated_client: TestClient,
@@ -525,7 +507,7 @@ def test_get_my_urls_skip_beyond_results(
         },
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     response = authenticated_client.get(
         "/users/me/urls?skip=10&limit=10",
@@ -533,6 +515,7 @@ def test_get_my_urls_skip_beyond_results(
 
     assert response.status_code == 200
     assert response.json() == []
+
 
 def test_get_my_urls_negative_skip(
     authenticated_client: TestClient,
@@ -542,6 +525,7 @@ def test_get_my_urls_negative_skip(
     )
 
     assert response.status_code == 422
+
 
 def test_update_url_to_same_url_returns_400(
     authenticated_client: TestClient,
@@ -553,7 +537,7 @@ def test_update_url_to_same_url_returns_400(
         },
     )
 
-    assert create_response.status_code == 200
+    assert create_response.status_code == 201
 
     short_code = create_response.json()["short_code"]
 
@@ -570,6 +554,7 @@ def test_update_url_to_same_url_returns_400(
         "detail": "The new URL is the same as the current one"
     }
 
+
 def test_redirect_url_does_not_require_authentication(
     client: TestClient,
     login,
@@ -584,7 +569,7 @@ def test_redirect_url_does_not_require_authentication(
         headers=headers,
     )
 
-    assert create_response.status_code == 200
+    assert create_response.status_code == 201
 
     short_code = create_response.json()["short_code"]
 
@@ -596,6 +581,7 @@ def test_redirect_url_does_not_require_authentication(
     assert response.status_code == 307
     assert response.headers["location"] == "https://example.com/"
 
+
 def test_short_code_contains_only_base62_characters(
     authenticated_client: TestClient,
 ):
@@ -606,7 +592,7 @@ def test_short_code_contains_only_base62_characters(
         },
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     short_code = response.json()["short_code"]
 
@@ -616,6 +602,7 @@ def test_short_code_contains_only_base62_characters(
         for character in short_code
     )
 
+
 def test_short_codes_are_unique(
     authenticated_client: TestClient,
 ):
@@ -623,18 +610,19 @@ def test_short_codes_are_unique(
         "/urls",
         json={"url": "https://example.com/"},
     )
-    assert first_response.status_code == 200
+    assert first_response.status_code == 201
 
     second_response = authenticated_client.post(
         "/urls",
         json={"url": "https://github.com/"},
     )
-    assert second_response.status_code == 200
+    assert second_response.status_code == 201
 
     first_short_code = first_response.json()["short_code"]
     second_short_code = second_response.json()["short_code"]
 
     assert first_short_code != second_short_code
+
 
 def test_create_url_response_contains_expected_fields(
     authenticated_client: TestClient,
@@ -646,7 +634,7 @@ def test_create_url_response_contains_expected_fields(
         },
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     body = response.json()
 
@@ -669,12 +657,13 @@ def test_create_url_does_not_expose_password(
         },
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     body = response.json()
 
     assert "password" not in body
     assert "hashed_password" not in body
+
 
 def test_user_cannot_access_another_users_url_by_short_code(
     client: TestClient,
@@ -692,7 +681,7 @@ def test_user_cannot_access_another_users_url_by_short_code(
         headers=testuser_headers,
     )
 
-    assert create_response.status_code == 200
+    assert create_response.status_code == 201
 
     short_code = create_response.json()["short_code"]
 
@@ -710,9 +699,7 @@ def test_user_cannot_access_another_users_url_by_short_code(
     )
 
     assert response.status_code == 404
-    assert response.json() == {
-        "detail": "URL not found"
-    }
+    assert response.json() == {"detail": "URL not found"}
 
 
 def test_user_cannot_delete_another_users_url_by_short_code(
@@ -731,7 +718,7 @@ def test_user_cannot_delete_another_users_url_by_short_code(
         headers=testuser_headers,
     )
 
-    assert create_response.status_code == 200
+    assert create_response.status_code == 201
 
     short_code = create_response.json()["short_code"]
 
@@ -746,9 +733,8 @@ def test_user_cannot_delete_another_users_url_by_short_code(
     )
 
     assert response.status_code == 404
-    assert response.json() == {
-        "detail": "URL not found"
-    }
+    assert response.json() == {"detail": "URL not found"}
+
 
 def test_get_my_urls_respects_limit(
     authenticated_client: TestClient,
@@ -764,11 +750,9 @@ def test_get_my_urls_respects_limit(
             "/urls",
             json={"url": url},
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
 
-    response = authenticated_client.get(
-        "/users/me/urls?limit=2"
-    )
+    response = authenticated_client.get("/users/me/urls?limit=2")
 
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -788,21 +772,18 @@ def test_get_my_urls_respects_skip_and_limit(
             "/urls",
             json={"url": url},
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
 
-    response = authenticated_client.get(
-        "/users/me/urls?skip=1&limit=1"
-    )
+    response = authenticated_client.get("/users/me/urls?skip=1&limit=1")
 
     assert response.status_code == 200
     assert len(response.json()) == 1
 
+
 def test_get_my_urls_zero_limit(
     authenticated_client: TestClient,
 ):
-    response = authenticated_client.get(
-        "/users/me/urls?limit=0"
-    )
+    response = authenticated_client.get("/users/me/urls?limit=0")
 
     assert response.status_code == 422
 
@@ -810,11 +791,10 @@ def test_get_my_urls_zero_limit(
 def test_get_my_urls_limit_above_maximum(
     authenticated_client: TestClient,
 ):
-    response = authenticated_client.get(
-        "/users/me/urls?limit=101"
-    )
+    response = authenticated_client.get("/users/me/urls?limit=101")
 
     assert response.status_code == 422
+
 
 def test_update_url_changes_original_url(
     authenticated_client: TestClient,
@@ -826,7 +806,7 @@ def test_update_url_changes_original_url(
         },
     )
 
-    assert create_response.status_code == 200
+    assert create_response.status_code == 201
 
     short_code = create_response.json()["short_code"]
 
@@ -855,7 +835,7 @@ def test_updated_url_redirects_to_new_destination(
         },
     )
 
-    assert create_response.status_code == 200
+    assert create_response.status_code == 201
 
     short_code = create_response.json()["short_code"]
 
@@ -876,6 +856,7 @@ def test_updated_url_redirects_to_new_destination(
     assert redirect_response.status_code == 307
     assert redirect_response.headers["location"] == "https://github.com/"
 
+
 def test_deleted_url_cannot_be_redirected(
     authenticated_client: TestClient,
     client: TestClient,
@@ -887,13 +868,11 @@ def test_deleted_url_cannot_be_redirected(
         },
     )
 
-    assert create_response.status_code == 200
+    assert create_response.status_code == 201
 
     short_code = create_response.json()["short_code"]
 
-    delete_response = authenticated_client.delete(
-        f"/users/me/urls/{short_code}"
-    )
+    delete_response = authenticated_client.delete(f"/users/me/urls/{short_code}")
 
     assert delete_response.status_code == 204
 
@@ -903,19 +882,17 @@ def test_deleted_url_cannot_be_redirected(
     )
 
     assert redirect_response.status_code == 404
-    assert redirect_response.json() == {
-        "detail": "URL not found"
-    }
+    assert redirect_response.json() == {"detail": "URL not found"}
+
 
 def test_get_my_urls_returns_empty_list_for_new_user(
     authenticated_client: TestClient,
 ):
-    response = authenticated_client.get(
-        "/users/me/urls"
-    )
+    response = authenticated_client.get("/users/me/urls")
 
     assert response.status_code == 200
     assert response.json() == []
+
 
 def test_short_code_collision_is_handled(
     authenticated_client: TestClient,
@@ -946,7 +923,7 @@ def test_short_code_collision_is_handled(
         },
     )
 
-    assert first_response.status_code == 200
+    assert first_response.status_code == 201
     assert first_response.json()["short_code"] == "ABC1234"
 
     second_response = authenticated_client.post(
@@ -956,5 +933,5 @@ def test_short_code_collision_is_handled(
         },
     )
 
-    assert second_response.status_code == 200
+    assert second_response.status_code == 201
     assert second_response.json()["short_code"] == "XYZ5678"

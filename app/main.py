@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 
+from app.api.routes.auth import router as auth_router
 from app.api.routes.urls import router as url_router
 from app.api.routes.users import router as user_router
-from app.api.routes.auth import router as auth_router
 
 app = FastAPI(
     title="URL Shortener",
