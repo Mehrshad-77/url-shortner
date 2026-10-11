@@ -901,6 +901,7 @@ def test_short_code_collision_is_handled(
     generated_codes = iter(
         [
             "ABC1234",
+            "ABC1234",
             "XYZ5678",
         ]
     )
@@ -914,6 +915,14 @@ def test_short_code_collision_is_handled(
         url_service,
         "generate_short_code",
         fake_generate_short_code,
+    )
+
+    # Simulate losing a race: any "is this code free?" check says yes, even
+    # though another request has already taken it.
+    monkeypatch.setattr(
+        url_service,
+        "get_url_by_short_code",
+        lambda db, short_code: None,
     )
 
     first_response = authenticated_client.post(
@@ -935,3 +944,39 @@ def test_short_code_collision_is_handled(
 
     assert second_response.status_code == 201
     assert second_response.json()["short_code"] == "XYZ5678"
+
+
+def test_short_code_collision_gives_up_after_max_attempts(
+    authenticated_client: TestClient,
+    monkeypatch,
+):
+    from app.services import url_service
+
+    monkeypatch.setattr(
+        url_service,
+        "generate_short_code",
+        lambda length=7: "ABC1234",
+    )
+
+    first_response = authenticated_client.post(
+        "/urls",
+        json={
+            "url": "https://example.com/",
+        },
+    )
+
+    assert first_response.status_code == 201
+
+    second_response = authenticated_client.post(
+        "/urls",
+        json={
+            "url": "https://github.com/",
+        },
+    )
+
+    assert second_response.status_code == 500
+    assert second_response.json() == {"detail": "Could not generate a short code"}
+
+    urls = authenticated_client.get("/users/me/urls")
+
+    assert len(urls.json()) == 1
