@@ -8,12 +8,12 @@ RUN pip install --no-cache-dir -r requirements-lock.txt
 
 COPY . .
 
-#Create an unpribvileged user and group
+# Create an unprivileged user and group
 RUN groupadd --system appgroup \
     && useradd --system --gid appgroup --create-home appuser \
     && chown -R appuser:appgroup /app
     
-#Run the application as a non-root user
+# Run the application as a non-root user
 USER appuser
 
 EXPOSE 8000
