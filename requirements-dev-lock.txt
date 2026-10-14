@@ -5,27 +5,45 @@
 #    pip-compile --output-file=requirements-dev-lock.txt requirements-dev.in
 #
 alembic==1.20.0
-    # via -r requirements.in
+    # via
+    #   -c requirements-lock.txt
+    #   -r requirements.in
 annotated-doc==0.0.5
-    # via fastapi
+    # via
+    #   -c requirements-lock.txt
+    #   fastapi
 annotated-types==0.8.0
-    # via pydantic
+    # via
+    #   -c requirements-lock.txt
+    #   pydantic
 anyio==4.15.1
     # via
+    #   -c requirements-lock.txt
     #   httpx2
     #   starlette
 argon2-cffi==25.1.0
-    # via -r requirements.in
+    # via
+    #   -c requirements-lock.txt
+    #   -r requirements.in
 argon2-cffi-bindings==26.1.0
-    # via argon2-cffi
+    # via
+    #   -c requirements-lock.txt
+    #   argon2-cffi
 cffi==2.1.1
-    # via argon2-cffi-bindings
+    # via
+    #   -c requirements-lock.txt
+    #   argon2-cffi-bindings
 click==8.5.0
-    # via uvicorn
+    # via
+    #   -c requirements-lock.txt
+    #   uvicorn
 fastapi==0.143.0
-    # via -r requirements.in
+    # via
+    #   -c requirements-lock.txt
+    #   -r requirements.in
 h11==0.16.0
     # via
+    #   -c requirements-lock.txt
     #   httpcore2
     #   uvicorn
 httpcore2==2.13.1
@@ -34,63 +52,94 @@ httpx2==2.13.1
     # via -r requirements-dev.in
 idna==3.20
     # via
+    #   -c requirements-lock.txt
     #   anyio
     #   httpx2
 iniconfig==2.3.1
     # via pytest
 mako==1.4.3
-    # via alembic
+    # via
+    #   -c requirements-lock.txt
+    #   alembic
 markupsafe==3.0.4
-    # via mako
+    # via
+    #   -c requirements-lock.txt
+    #   mako
 nanoid==2.0.0
-    # via -r requirements.in
+    # via
+    #   -c requirements-lock.txt
+    #   -r requirements.in
 opentelemetry-api==1.45.1
-    # via fastapi
+    # via
+    #   -c requirements-lock.txt
+    #   fastapi
 packaging==26.3
     # via pytest
 pluggy==1.6.0
     # via pytest
 psycopg[binary]==3.3.6
-    # via -r requirements.in
+    # via
+    #   -c requirements-lock.txt
+    #   -r requirements.in
 psycopg-binary==3.3.6
-    # via psycopg
+    # via
+    #   -c requirements-lock.txt
+    #   psycopg
 pwdlib==0.3.1
-    # via -r requirements.in
+    # via
+    #   -c requirements-lock.txt
+    #   -r requirements.in
 pycparser==3.11
-    # via cffi
+    # via
+    #   -c requirements-lock.txt
+    #   cffi
 pydantic==2.14.1
     # via
+    #   -c requirements-lock.txt
     #   -r requirements.in
     #   fastapi
     #   pydantic-settings
 pydantic-core==2.50.1
-    # via pydantic
+    # via
+    #   -c requirements-lock.txt
+    #   pydantic
 pydantic-settings==2.15.0
-    # via -r requirements.in
+    # via
+    #   -c requirements-lock.txt
+    #   -r requirements.in
 pygments==2.21.0
     # via pytest
 pyjwt==2.15.1
-    # via -r requirements.in
+    # via
+    #   -c requirements-lock.txt
+    #   -r requirements.in
 pytest==9.1.1
     # via -r requirements-dev.in
 python-dotenv==1.2.4
     # via
+    #   -c requirements-lock.txt
     #   -r requirements.in
     #   pydantic-settings
 python-multipart==0.0.32
-    # via -r requirements.in
+    # via
+    #   -c requirements-lock.txt
+    #   -r requirements.in
 sqlalchemy==2.1.4
     # via
+    #   -c requirements-lock.txt
     #   -r requirements.in
     #   alembic
 starlette==1.8.0
-    # via fastapi
+    # via
+    #   -c requirements-lock.txt
+    #   fastapi
 truststore==0.10.5
     # via
     #   httpcore2
     #   httpx2
 typing-extensions==4.16.0
     # via
+    #   -c requirements-lock.txt
     #   alembic
     #   anyio
     #   fastapi
@@ -101,8 +150,11 @@ typing-extensions==4.16.0
     #   typing-inspection
 typing-inspection==0.4.4
     # via
+    #   -c requirements-lock.txt
     #   fastapi
     #   pydantic
     #   pydantic-settings
 uvicorn==0.54.0
-    # via -r requirements.in
+    # via
+    #   -c requirements-lock.txt
+    #   -r requirements.in

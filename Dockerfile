@@ -11,7 +11,6 @@ COPY . .
 # Create an unprivileged user and group
 RUN groupadd --system appgroup \
     && useradd --system --gid appgroup --create-home appuser
-    
 # Run the application as a non-root user
 USER appuser
 
