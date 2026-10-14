@@ -61,10 +61,10 @@ jobs:
         with:
           python-version: "3.14"
           cache: pip
-          cache-dependency-path: requirements-lock.txt
+          cache-dependency-path: requirements-dev-lock.txt
 
       - name: Install dependencies
-        run: python -m pip install -r requirements-lock.txt
+        run: python -m pip install -r requirements-dev-lock.txt
 
       - name: Run tests
         run: python -m pytest -q

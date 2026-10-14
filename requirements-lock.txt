@@ -20,7 +20,7 @@ cffi==2.1.1
     # via argon2-cffi-bindings
 click==8.5.0
     # via uvicorn
-fastapi==0.142.0
+fastapi==0.143.0
     # via -r requirements.in
 h11==0.16.0
     # via uvicorn
@@ -28,11 +28,11 @@ idna==3.20
     # via anyio
 mako==1.4.3
     # via alembic
-markupsafe==3.0.3
+markupsafe==3.0.4
     # via mako
 nanoid==2.0.0
     # via -r requirements.in
-opentelemetry-api==1.45.0
+opentelemetry-api==1.45.1
     # via fastapi
 psycopg[binary]==3.3.6
     # via -r requirements.in
@@ -40,30 +40,30 @@ psycopg-binary==3.3.6
     # via psycopg
 pwdlib==0.3.1
     # via -r requirements.in
-pycparser==3.0
+pycparser==3.11
     # via cffi
-pydantic==2.13.5
+pydantic==2.14.1
     # via
     #   -r requirements.in
     #   fastapi
     #   pydantic-settings
-pydantic-core==2.46.5
+pydantic-core==2.50.1
     # via pydantic
 pydantic-settings==2.15.0
     # via -r requirements.in
 pyjwt==2.15.1
     # via -r requirements.in
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via
     #   -r requirements.in
     #   pydantic-settings
 python-multipart==0.0.32
     # via -r requirements.in
-sqlalchemy==2.1.1
+sqlalchemy==2.1.4
     # via
     #   -r requirements.in
     #   alembic
-starlette==1.7.0
+starlette==1.8.0
     # via fastapi
 typing-extensions==4.16.0
     # via
