@@ -46,7 +46,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql+psycopg://url_shortener:url_shortener_password@localhost:5432/url_shortener_test
+      DATABASE_URL: postgresql+psycopg://url_shortener:url_shortener_password@localhost:5432/url_shortener
       TEST_DATABASE_URL: postgresql+psycopg://url_shortener:url_shortener_password@localhost:5432/url_shortener_test
       JWT_SECRET_KEY: ci-only-secret-key-not-for-production
       JWT_ALGORITHM: HS256
