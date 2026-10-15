@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine import make_url
 
+from app.config import settings
 from app.database import get_db
 from app.main import app
 from app.models import Base, User
@@ -17,6 +19,9 @@ TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
 
 if not TEST_DATABASE_URL:
     raise RuntimeError("TEST_DATABASE_URL is not set")
+
+if make_url(TEST_DATABASE_URL).database == make_url(settings.database_url).database:
+    raise RuntimeError("TEST_DATABASE_URL must not point at the real database")
 
 
 test_engine = create_engine(TEST_DATABASE_URL)

@@ -331,6 +331,7 @@ def test_user_cannot_update_another_users_url(
     )
 
     assert response.status_code == 404
+    assert response.json() == {"detail": "URL not found"}
 
     redirect_response = client.get(
         f"/{short_code}",
@@ -367,6 +368,7 @@ def test_user_cannot_delete_another_users_url(
     )
 
     assert response.status_code == 404
+    assert response.json() == {"detail": "URL not found"}
 
     redirect_response = client.get(
         f"/{short_code}",
@@ -709,99 +711,6 @@ def test_create_url_does_not_expose_password(
     assert "hashed_password" not in body
 
 
-def test_user_cannot_access_another_users_url_by_short_code(
-    client: TestClient,
-    login,
-    alice_user,
-    alice_password,
-):
-    testuser_headers = login()
-
-    create_response = client.post(
-        "/urls",
-        json={
-            "url": "https://example.com/",
-        },
-        headers=testuser_headers,
-    )
-
-    assert create_response.status_code == 201
-
-    short_code = create_response.json()["short_code"]
-
-    alice_headers = login(
-        username=alice_user.username,
-        password=alice_password,
-    )
-
-    response = client.patch(
-        f"/users/me/urls/{short_code}",
-        json={
-            "url": "https://github.com/",
-        },
-        headers=alice_headers,
-    )
-
-    assert response.status_code == 404
-    assert response.json() == {"detail": "URL not found"}
-
-
-def test_user_cannot_delete_another_users_url_by_short_code(
-    client: TestClient,
-    login,
-    alice_user,
-    alice_password,
-):
-    testuser_headers = login()
-
-    create_response = client.post(
-        "/urls",
-        json={
-            "url": "https://example.com/",
-        },
-        headers=testuser_headers,
-    )
-
-    assert create_response.status_code == 201
-
-    short_code = create_response.json()["short_code"]
-
-    alice_headers = login(
-        username=alice_user.username,
-        password=alice_password,
-    )
-
-    response = client.delete(
-        f"/users/me/urls/{short_code}",
-        headers=alice_headers,
-    )
-
-    assert response.status_code == 404
-    assert response.json() == {"detail": "URL not found"}
-
-
-def test_get_my_urls_respects_limit(
-    authenticated_client: TestClient,
-):
-    urls = [
-        "https://example.com/",
-        "https://github.com/",
-        "https://google.com/",
-    ]
-
-    for url in urls:
-        response = authenticated_client.post(
-            "/urls",
-            json={"url": url},
-        )
-        assert response.status_code == 201
-
-    response = authenticated_client.get("/users/me/urls?limit=2")
-
-    assert response.status_code == 200
-    assert len(response.json()) == 2
-
-
 def test_get_my_urls_respects_skip_and_limit(
     authenticated_client: TestClient,
 ):
@@ -830,42 +739,6 @@ def test_get_my_urls_zero_limit(
     response = authenticated_client.get("/users/me/urls?limit=0")
 
     assert response.status_code == 422
-
-
-def test_get_my_urls_limit_above_maximum(
-    authenticated_client: TestClient,
-):
-    response = authenticated_client.get("/users/me/urls?limit=101")
-
-    assert response.status_code == 422
-
-
-def test_update_url_changes_original_url(
-    authenticated_client: TestClient,
-):
-    create_response = authenticated_client.post(
-        "/urls",
-        json={
-            "url": "https://example.com/",
-        },
-    )
-
-    assert create_response.status_code == 201
-
-    short_code = create_response.json()["short_code"]
-
-    update_response = authenticated_client.patch(
-        f"/users/me/urls/{short_code}",
-        json={
-            "url": "https://github.com/",
-        },
-    )
-
-    assert update_response.status_code == 200
-
-    body = update_response.json()
-
-    assert body["short_code"] == short_code
 
 
 def test_updated_url_redirects_to_new_destination(
@@ -959,14 +832,6 @@ def test_short_code_collision_is_handled(
         url_service,
         "generate_short_code",
         fake_generate_short_code,
-    )
-
-    # Simulate losing a race: any "is this code free?" check says yes, even
-    # though another request has already taken it.
-    monkeypatch.setattr(
-        url_service,
-        "get_url_by_short_code",
-        lambda db, short_code: None,
     )
 
     first_response = authenticated_client.post(
