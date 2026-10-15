@@ -4,8 +4,8 @@ import pytest
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import make_url
+from sqlalchemy.orm import sessionmaker
 
 from app.config import settings
 from app.database import get_db
