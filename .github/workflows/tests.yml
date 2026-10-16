@@ -36,11 +36,11 @@ jobs:
         env:
           POSTGRES_USER: url_shortener
           POSTGRES_PASSWORD: url_shortener_password
-          POSTGRES_DB: url_shortener_test
+          POSTGRES_DB: url_shortener
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U url_shortener -d url_shortener_test"
+          --health-cmd "pg_isready -U url_shortener -d url_shortener"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
@@ -65,6 +65,28 @@ jobs:
 
       - name: Install dependencies
         run: python -m pip install -r requirements-dev-lock.txt
+
+      - name: Create test database
+        run: |
+          python - <<'PY'
+          import psycopg
+
+          with psycopg.connect(
+              host="localhost",
+              port=5432,
+              dbname="url_shortener",
+              user="url_shortener",
+              password="url_shortener_password",
+              autocommit=True,
+          ) as connection:
+              connection.execute("CREATE DATABASE url_shortener_test")
+          PY
+
+      - name: Test migrations on a fresh database
+        run: alembic upgrade head
+
+      - name: Check model and migration consistency
+        run: alembic check
 
       - name: Run tests
         run: python -m pytest -q
